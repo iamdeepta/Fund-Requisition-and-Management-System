@@ -10,7 +10,7 @@ if (isset($_POST['add_economic_code']) && $_SESSION["flag"] == "ok") {
     $msg = @$_GET['msg'];
 
         $code_no = $_POST["code_no"];
-        $code_name = $_POST["code_name"];
+        $code_name = mysqli_real_escape_string($conn,$_POST["code_name"]);
         $code_no_bn = $_POST["code_no_bn"];
         $code_name_bn = $_POST["code_name_bn"];
         $head_office = @$_POST["head_office"];
@@ -104,8 +104,8 @@ if (isset($_POST['btn_process_create']) && $_SESSION["flag"] == "ok") {
 
         $process_id = $_POST["process_id"];
         $code_checkbox = $_POST["code_checkbox"];
-        $process_name = $_POST["process_name"];
-        $table_name = 'tbl_'.str_replace(' ','_',strtolower($_POST["process_name"]));
+        $process_name = mysqli_real_escape_string($conn,$_POST["process_name"]);
+        $table_name = 'tbl_'.str_replace(' ','_',mysqli_real_escape_string($conn,$process_name));
         
 
         //$code_check = array();
@@ -168,19 +168,20 @@ if (isset($_POST['btn_process_create']) && $_SESSION["flag"] == "ok") {
 
 
 
-        $add_requisition = mysqli_query($conn, "select id, category_id, substring_index( substring_index(code_id, ',', n), ',', -1 ) as code_id from tbl_process join numbers on char_length(code_id) - char_length(replace(code_id, ',', '')) >= n - 1 where active = 1") or die(mysqli_error($conn));
+        $add_requisition = mysqli_query($conn, "select tp.id, tp.category_id, tc.CodeNameBN, substring_index( substring_index(tp.code_id, ',', num.n), ',', -1 ) as code_id from tbl_process as tp join numbers as num on char_length(tp.code_id) - char_length(replace(tp.code_id, ',', '')) >= num.n - 1 join tbl_code as tc on tc.ID= substring_index( substring_index(tp.code_id, ',', num.n), ',', -1 ) where tp.active=1") or die(mysqli_error($conn));
 
 
 
-        $createQuery = "CREATE TABLE $table_name (
+        $createQuery = "CREATE TABLE `$table_name` (
                         ID INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,";
 
         foreach($add_requisition as $requisition){
 
             $code_id = $requisition['code_id'];
             $id1 = $requisition['id'];
+            $code_names = $requisition['CodeNameBN'];
 
-            $createQuery .= "`$code_id ($id1)` FLOAT NOT NULL,";
+            $createQuery .= "`$code_names` TEXT COLLATE utf8_general_ci NOT NULL,";
         } 
 
 
@@ -188,8 +189,10 @@ if (isset($_POST['btn_process_create']) && $_SESSION["flag"] == "ok") {
                         OfficeID INT(11) NOT NULL,
                         OrderID INT(11) NOT NULL,
                         InsertDate Date NOT NULL,
-                        UpdateDate Date NOT NULL
-                    )";
+                        UpdateDate Date NOT NULL,
+                        Remarks TEXT COLLATE utf8_general_ci NOT NULL
+                    )
+                    ";
     
                         
         
@@ -207,6 +210,100 @@ if (isset($_POST['btn_process_create']) && $_SESSION["flag"] == "ok") {
     $msg_success = "The process has been created successfully!";
     //echo $processQuery;
     header("Location: create_process.php?msg_success=".$msg_success);
+
+
+}
+
+
+
+
+if (isset($_POST['add_new_wages']) && $_SESSION["flag"] == "ok") {
+
+    require("config/connection.php");
+
+    $msg = @$_GET['msg'];
+    $msg_add_new = @$_GET['msg_add_new'];
+
+
+    $add_requisition = mysqli_query($conn, "select tp.id, tp.category_id, tc.CodeNameBN, substring_index( substring_index(tp.code_id, ',', num.n), ',', -1 ) as code_id from tbl_process as tp join numbers as num on char_length(tp.code_id) - char_length(replace(tp.code_id, ',', '')) >= num.n - 1 join tbl_code as tc on tc.ID= substring_index( substring_index(tp.code_id, ',', num.n), ',', -1 ) where tp.id=$msg") or die(mysqli_error($conn));
+
+
+
+        $emp_id = $_POST['emp_id'];
+        $remarks = $_POST['remarks'];
+        
+
+        $user_id = $_SESSION["UserID"];
+        //$OfficeID = $_SESSION["OfficeID"];
+  
+    
+        $tbl_process1 = mysqli_query($conn, "SELECT * from tbl_process where id = $msg") or die(mysqli_error($conn));
+
+    while($process1=mysqli_fetch_array($tbl_process1)){
+
+        $process_name = $process1['process_name'];
+        $table_name = $process1['table_name'];
+    }
+
+
+    /*$add_requisition = mysqli_query($conn, "select tp.id, tp.category_id, tc.CodeNameBN, substring_index( substring_index(tp.code_id, ',', num.n), ',', -1 ) as code_id from tbl_process as tp join numbers as num on char_length(tp.code_id) - char_length(replace(tp.code_id, ',', '')) >= num.n - 1 join tbl_code as tc on tc.ID= substring_index( substring_index(tp.code_id, ',', num.n), ',', -1 ) where tp.id=$msg") or die(mysqli_error($conn));*/
+        
+
+        $office_id = 22;
+        $order_id = 0;
+        $insert_date = date("Y-m-d");
+        $update_date = date("0000-00-00");
+
+        $salaryQuery = "INSERT INTO $table_name 
+                    SET";
+
+            foreach($add_requisition as $ar){
+
+                /*$code_id = $ar['code_id'];
+                $id1 = $ar['id'];
+                $code_names = $ar['CodeNameBN'];*/
+
+                //for($i=0; $i<$count;$i++){?>
+
+                    <td hidden><?php $code_id1 = $ar['code_id'];?></td>
+                    <td hidden><?php $code_names = $ar['CodeNameBN'];?></td>
+                    <td hidden><?php $salary = $_POST["salary$code_id1"];?></td>
+
+                <td hidden><?php $salaryQuery .= "`$code_names` = '{$salary}',";?></td> 
+          
+           <?php }
+            //}
+
+
+            $salaryQuery .= "
+                        `EmpID` = '{$emp_id}',
+                        `OfficeID` = '{$office_id}',
+                        `OrderID` = '{$order_id}',
+                        `InsertDate` = '{$insert_date}',
+                        `UpdateDate` = '{$update_date}',
+                        `Remarks` = '{$remarks}'
+
+            "; 
+
+        
+
+        $add_salary = mysqli_query($conn, $salaryQuery);
+
+
+    //}
+
+
+
+        /*$lastID = $connection->lastInsertID();
+        $contract_id=$lastID;*/
+
+
+            $msg_success = "The salaries of the employee has been added successfully!";
+    //echo $salaryQuery;
+        header("Location: add_requisition_salary.php?msg=".$msg."&msg_success=".$msg_success);
+
+
+
 
 
 }

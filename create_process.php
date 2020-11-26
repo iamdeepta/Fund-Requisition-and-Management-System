@@ -138,7 +138,7 @@ $tbl_code = mysqli_query($conn, "SELECT * from tbl_code") or die(mysqli_error($c
                             <?php while($code = mysqli_fetch_array($tbl_code)){?>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="checkbox" id="code_checkbox[]" name="code_checkbox[]" value="<?=$code['ID']?>" >
-                                <label class="form-check-label" for="inlineCheckbox1"><?=$code['CodeName']?></label>
+                                <label class="form-check-label" for="inlineCheckbox1"><?=$code['CodeNameBN']?></label>
                             </div>
 
                             <?php }?>
